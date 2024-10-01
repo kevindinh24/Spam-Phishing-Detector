@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spam and Phishing Detection</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="text-center my-5">
+            <h1>Spam and Phishing Detection</h1>
+            <p class="lead">Enter a message or URL to detect if it's spam or phishing</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <form id="predictForm">
+                    <div class="form-group">
+                        <textarea class="form-control" id="message" rows="4" placeholder="Enter message or URL" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <select class="form-control" id="detection_type" required>
+                            <option value="">Select Detection Type</option>
+                            <option value="Spam">Spam</option>
+                            <option value="Phishing">Phishing</option>
+                            <option value="Phishing URL">Phishing URL</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Check</button>
+                </form>
+                <div class="mt-4" id="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <div style="height: 800px;"></div>
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <div class="container">
+            <p>© 2024 Kevin Dinh. All rights reserved.</p>
+            <p>This project is licensed under the MIT License - see the <a href="LICENSE" class="text-white">LICENSE</a> file for details.</p>
+            <p>Contact: <a href="mailto:kkd49@drexel.edu" class="text-white">kkd49@drexel.edu</a></p>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        $('#predictForm').on('submit', function(e) {
+            e.preventDefault();
+            var message = $('#message').val();
+            var detectionType = $('#detection_type').val();  // Get selected detection type
+            $.ajax({
+                url: '/predict',
+                type: 'POST',
+                data: { message: message, detection_type: detectionType },  // Send both message and detection type
+                success: function(response) {
+                    $('#result').html(`<div class="alert alert-info">
+                        <strong>Result:</strong> ${response.result}<br>
+                        <strong>Confidence:</strong> ${response.confidence}
+                    </div>`);
+                },
+                error: function(xhr, status, error) {
+                    $('#result').html(`<div class="alert alert-danger">
+                        <strong>Error:</strong> ${xhr.responseText}
+                    </div>`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

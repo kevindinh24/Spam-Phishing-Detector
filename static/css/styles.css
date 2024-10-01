@@ -1,0 +1,44 @@
+body {
+    background-color: #f8f9fa;
+    font-family: 'Poppins', sans-serif; 
+}
+
+h1 {
+    color: #007bff; /* Primary color for headings */
+    margin-bottom: 20px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+}
+
+textarea {
+    border-radius: 0.5rem; /* Rounded corners for input fields */
+    border: 2px solid #007bff; /* Highlighted border */
+}
+
+textarea:focus {
+    border-color: #0056b3; /* Darker blue on focus */
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Soft shadow on focus */
+}
+
+.btn {
+    border-radius: 0.5rem; /* Rounded button edges */
+}
+
+.alert {
+    border-radius: 0.5rem; /* Rounded alert box */
+}
+
+footer {
+    
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+footer p {
+    margin: 0;
+}
+
+footer a {
+    color: #ffc107; /* Bootstrap warning color for links */
+}
