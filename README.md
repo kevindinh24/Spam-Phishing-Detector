@@ -115,6 +115,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Kevin Dinh**
 - Email: [kkd49@drexel.edu](mailto:kkd49@drexel.edu)
 - LinkedIn: [kevinkdinh](https://linkedin.com/in/kevinkdinh)
-
-
-⭐ **Star this repository if you found it helpful!**

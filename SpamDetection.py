@@ -3,8 +3,12 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
+import os
 
 app = Flask(__name__)
+
+# Get the directory where the script is located
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Global variables for models and vectorizers
 models = {
@@ -20,36 +24,51 @@ vectorizers = {
 
 # Function to load spam dataset
 def load_spam_data(file=None):
-    if file is not None:
-        data = pd.read_csv(file)
-    else:
-        data = pd.read_csv("/Users/kevindinh/Desktop/Spam/spam.csv")  # Your specific path
-       
-    data.drop_duplicates(inplace=True)
-    data['Category'] = data['Category'].replace(['ham', 'spam'], ['Not Spam', 'Spam'])
-    return data
+    try:
+        if file is not None:
+            data = pd.read_csv(file)
+        else:
+            data = pd.read_csv(os.path.join(BASE_DIR, "spam.csv"))
+           
+        data.drop_duplicates(inplace=True)
+        data['Category'] = data['Category'].replace(['ham', 'spam'], ['Not Spam', 'Spam'])
+        return data
+    except FileNotFoundError:
+        raise Exception("Spam dataset not found. Please ensure spam.csv is in the project directory.")
+    except Exception as e:
+        raise Exception(f"Error loading spam data: {str(e)}")
 
 # Function to load phishing message dataset
 def load_phishing_data(file=None):
-    if file is not None:
-        data = pd.read_csv(file)
-    else:
-        data = pd.read_csv("/Users/kevindinh/Desktop/Spam/phishing.csv")  # Your specific path
-       
-    data['Category'] = data['CLASS_LABEL'].replace([0, 1], ['Not Phishing', 'Phishing'])
-    data['Message'] = data.apply(lambda row: f"{row['NumDots']} {row['SubdomainLevel']} {row['PathLevel']} {row['UrlLength']}", axis=1)
-    return data
+    try:
+        if file is not None:
+            data = pd.read_csv(file)
+        else:
+            data = pd.read_csv(os.path.join(BASE_DIR, "phishing.csv"))
+           
+        data['Category'] = data['CLASS_LABEL'].replace([0, 1], ['Not Phishing', 'Phishing'])
+        data['Message'] = data.apply(lambda row: f"{row['NumDots']} {row['SubdomainLevel']} {row['PathLevel']} {row['UrlLength']}", axis=1)
+        return data
+    except FileNotFoundError:
+        raise Exception("Phishing dataset not found. Please ensure phishing.csv is in the project directory.")
+    except Exception as e:
+        raise Exception(f"Error loading phishing data: {str(e)}")
 
 # Function to load phishing URL dataset
 def load_phishing_url_data(file=None):
-    if file is not None:
-        data = pd.read_csv(file)
-    else:
-        data = pd.read_csv("/Users/kevindinh/Desktop/Spam/phishing_url.csv")  # Your specific path
-       
-    data['Category'] = data['status'].replace(['legitimate', 'phishing'], ['Not Phishing', 'Phishing'])
-    data['Message'] = data['url']  # Use URLs directly as the message for vectorization
-    return data
+    try:
+        if file is not None:
+            data = pd.read_csv(file)
+        else:
+            data = pd.read_csv(os.path.join(BASE_DIR, "phishing_url.csv"))
+           
+        data['Category'] = data['status'].replace(['legitimate', 'phishing'], ['Not Phishing', 'Phishing'])
+        data['Message'] = data['url']  # Use URLs directly as the message for vectorization
+        return data
+    except FileNotFoundError:
+        raise Exception("Phishing URL dataset not found. Please ensure phishing_url.csv is in the project directory.")
+    except Exception as e:
+        raise Exception(f"Error loading phishing URL data: {str(e)}")
 
 # Preprocessing and model training
 def train_model(data):
@@ -88,26 +107,39 @@ def license_file():
 # Route for handling the form submission
 @app.route('/predict', methods=['POST'])
 def predict_route():
-    message = request.form['message']
-    detection_type = request.form['detection_type']
+    try:
+        message = request.form['message']
+        detection_type = request.form['detection_type']
+        
+        if not message.strip():
+            return jsonify({'error': 'Please enter a message to analyze'}), 400
+        
+        if detection_type == 'Spam':
+            data = load_spam_data()
+        elif detection_type == 'Phishing':
+            data = load_phishing_data()
+        elif detection_type == 'Phishing URL':
+            data = load_phishing_url_data()
+        else:
+            return jsonify({'error': 'Invalid detection type selected'}), 400
+        
+        # Train the model using the selected dataset
+        model, cv = train_model(data)
+        output, proba = predict(message, model, cv)
+        confidence = proba[1]  # Probability of phishing/spam
+        
+        return jsonify({
+            'result': output,
+            'confidence': round(confidence, 3)
+        })
     
-    if detection_type == 'Spam':
-        data = load_spam_data()
-    elif detection_type == 'Phishing':
-        data = load_phishing_data()
-    else:  # Phishing URL
-        data = load_phishing_url_data()
-    
-    # Train the model using the selected dataset
-    model, cv = train_model(data)
-    output, proba = predict(message, model, cv)
-    confidence = proba[1]  # Probability of phishing/spam
-    
-    return jsonify({
-        'result': output,
-        'confidence': confidence
-    })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Get port from environment variable or default to 5000
+    port = int(os.environ.get('PORT', 5000))
+    # Run in production mode when deployed
+    debug_mode = os.environ.get('FLASK_ENV') != 'production'
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
 

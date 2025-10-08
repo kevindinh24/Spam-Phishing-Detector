@@ -49,20 +49,43 @@
         $('#predictForm').on('submit', function(e) {
             e.preventDefault();
             var message = $('#message').val();
-            var detectionType = $('#detection_type').val();  // Get selected detection type
+            var detectionType = $('#detection_type').val();
+            
+            // Show loading state
+            $('#result').html(`<div class="alert alert-info">
+                <strong>Analyzing...</strong> Please wait while we process your request.
+            </div>`);
+            
             $.ajax({
                 url: '/predict',
                 type: 'POST',
-                data: { message: message, detection_type: detectionType },  // Send both message and detection type
+                data: { message: message, detection_type: detectionType },
                 success: function(response) {
-                    $('#result').html(`<div class="alert alert-info">
-                        <strong>Result:</strong> ${response.result}<br>
-                        <strong>Confidence:</strong> ${response.confidence}
-                    </div>`);
+                    if (response.error) {
+                        $('#result').html(`<div class="alert alert-danger">
+                            <strong>Error:</strong> ${response.error}
+                        </div>`);
+                    } else {
+                        var confidencePercent = (response.confidence * 100).toFixed(1);
+                        var alertClass = response.result.includes('Spam') || response.result.includes('Phishing') ? 'alert-danger' : 'alert-success';
+                        $('#result').html(`<div class="alert ${alertClass}">
+                            <strong>Result:</strong> ${response.result}<br>
+                            <strong>Confidence:</strong> ${confidencePercent}%
+                        </div>`);
+                    }
                 },
                 error: function(xhr, status, error) {
+                    var errorMessage = 'An unexpected error occurred. Please try again.';
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.error) {
+                            errorMessage = response.error;
+                        }
+                    } catch (e) {
+                        errorMessage = xhr.responseText || errorMessage;
+                    }
                     $('#result').html(`<div class="alert alert-danger">
-                        <strong>Error:</strong> ${xhr.responseText}
+                        <strong>Error:</strong> ${errorMessage}
                     </div>`);
                 }
             });
